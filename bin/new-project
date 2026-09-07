@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# new-project — scaffolding de un proyecto nuevo desde plantilla del command center
+# Uso: new-project <nombre> [tipo]
+#   tipo: node-service | python-service | iot-dashboard (opcional)
+set -euo pipefail
+
+CC_HOME="${CC_HOME:-$HOME/command-center}"
+PROJECTS_DIR="$HOME"
+
+if [ $# -lt 1 ]; then
+  echo "Uso: new-project <nombre> [node-service|python-service|iot-dashboard]" >&2
+  exit 1
+fi
+
+NAME="$1"
+TYPE="${2:-}"
+TARGET="$PROJECTS_DIR/$NAME"
+
+if [ -e "$TARGET" ]; then
+  echo "ERROR: ya existe $TARGET" >&2
+  exit 1
+fi
+
+# Crear directorio del proyecto
+mkdir -p "$TARGET"
+
+# Copiar plantilla de stack si se pidió
+if [ -n "$TYPE" ]; then
+  TEMPLATE="$CC_HOME/templates/$TYPE"
+  if [ ! -d "$TEMPLATE" ]; then
+    echo "ERROR: no existe plantilla '$TYPE' en $TEMPLATE" >&2
+    exit 1
+  fi
+  cp -R "$TEMPLATE/." "$TARGET/"
+  echo "✔ Plantilla $TYPE copiada a $TARGET"
+fi
+
+# Crear ficha de registro desde _template.md
+FICHA="$CC_HOME/projects/$NAME.md"
+if [ -e "$FICHA" ]; then
+  echo "WARN: la ficha $FICHA ya existe — no se sobreescribe" >&2
+else
+  sed "s/<nombre-del-proyecto>/$NAME/g" "$CC_HOME/projects/_template.md" > "$FICHA"
+  echo "✔ Ficha creada: $FICHA"
+  echo "  → Complétala y ábrela por PR al command center."
+fi
+
+echo "✔ Proyecto inicializado: $TARGET"

@@ -1,0 +1,56 @@
+name: CI — command-center
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Estructura requerida
+        run: |
+          set -euo pipefail
+          test -f README.md
+          test -f LICENSE
+          test -f .github/CODEOWNERS
+          test -f .github/PULL_REQUEST_TEMPLATE.md
+          test -f projects/_template.md
+          test -d bin
+          test -d docs/adr
+          test -d docs/playbooks
+
+      - name: Plantilla ADR correcta
+        run: |
+          set -euo pipefail
+          # Cada ADR declara Estado y Fecha
+          for f in docs/adr/*.md; do
+            grep -q "Estado" "$f" || { echo "FALTA 'Estado' en $f"; exit 1; }
+            grep -q "Fecha" "$f" || { echo "FALTA 'Fecha' en $f"; exit 1; }
+          done
+
+      - name: Fichas de proyecto completas
+        run: |
+          set -euo pipefail
+          # Toda ficha (excepto _template) declara los campos obligatorios
+          for f in projects/*.md; do
+            [ "$(basename "$f")" = "_template.md" ] && continue
+            for campo in "Estado" "Stack" "Rutas locales" "Runtime" "Pendientes"; do
+              grep -q "$campo" "$f" || { echo "FALTA '$campo' en $f"; exit 1; }
+            done
+          done
+
+      - name: Scripts ejecutables y con set -euo pipefail
+        run: |
+          set -euo pipefail
+          # Solo archivos, no READMEs
+          for f in bin/* tools/*; do
+            [ -f "$f" ] || continue
+            case "$f" in *.md) continue ;; esac
+            [ -x "$f" ] || { echo "NO ejecutable: $f"; exit 1; }
+            head -5 "$f" | grep -q "set -euo pipefail" || { echo "SIN 'set -euo pipefail' en $f"; exit 1; }
+          done
