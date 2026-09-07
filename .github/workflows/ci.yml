@@ -23,6 +23,7 @@ jobs:
           test -d bin
           test -d docs/adr
           test -d docs/playbooks
+          test -d docs/agents
 
       - name: Plantilla ADR correcta
         run: |
