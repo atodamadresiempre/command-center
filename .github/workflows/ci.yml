@@ -47,8 +47,10 @@ jobs:
       - name: Scripts ejecutables y con set -euo pipefail
         run: |
           set -euo pipefail
-          shopt -s nullglob
+          # Solo archivos, no READMEs
           for f in bin/* tools/*; do
+            [ -f "$f" ] || continue
+            case "$f" in *.md) continue ;; esac
             [ -x "$f" ] || { echo "NO ejecutable: $f"; exit 1; }
             head -5 "$f" | grep -q "set -euo pipefail" || { echo "SIN 'set -euo pipefail' en $f"; exit 1; }
           done
