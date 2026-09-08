@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Estado | active (MVP en desarrollo) |
+| Estado | active (en producción) |
 | Dueño | atodamadresiempre |
 | Creado | 2026-09-07 |
 | Última revisión | 2026-09-07 |
@@ -15,40 +15,47 @@ Referencia UX: Durger King Bot.
 
 ## Stack
 
-- Python 3.11 + python-telegram-bot v21 (bot puro, botones inline)
-- APScheduler (corte y recordatorio en el mismo proceso)
-- SQLite (convención ct_/st_)
+- Python 3.11 + python-telegram-bot v21 (bot + conversación /menu)
+- Web App (aiohttp :8080): mini página estilo Durger King — botón de
+  menú junto al textbox (setChatMenuButton), stepper, notas, borrado
+- APScheduler (corte vie 17:00 + recordatorio jue 18:00)
+- SQLite (convención ct_/st_) en volumen Docker persistente
+- Docker (colima) + túnel cloudflared (HTTPS público para la Web App)
 - Repo: github.com/atodamadresiempre/pedidos-comida (privado)
+- Bot: @Salsabrozas_bot
 
-## Rutas locales
+## Rutas y despliegue
 
-| Qué | Ruta |
+| Qué | Dónde |
 |---|---|
-| Código fuente | ~/pedidos-comida/ |
-| Base de datos | ~/pedidos-comida/data/pedidos.db |
-| venv | ~/pedidos-comida/.venv |
+| Código | ~/pedidos-comida/ |
+| Contenedor | docker compose (pedidos-bot, restart unless-stopped) |
+| DB | volumen Docker pedidos-comida_pedidos-data:/data/pedidos.db |
+| Túnel público | LaunchAgent com.local.webapp-tunnel (auto-re-registra URL en el bot) |
+| Colima al login | LaunchAgent com.local.colima.start |
 
-## Runtime
+Arranque total tras reinicio de Mac: login → colima → contenedor →
+túnel → botón actualizado. Todo automático.
 
-- **Arrancar:** `./.venv/bin/python -m src.main` (envía PEDIDOS_BOT_TOKEN, PEDIDOS_HOME_CHAT_ID, PEDIDOS_ADMIN_IDS)
-- **Detener:** SIGINT del proceso
-- **Verificar salud:** el bot responde /start en Telegram; logs en stdout
+## Operación
 
-## Despliegue
-
-Proceso local en el Mac (futuro: launchd service o Raspberry).
+- Logs: `docker compose logs -f pedidos-bot`
+- Reconstruir: `docker compose up -d --build`
+- Menú: editar ct_menu_items en la DB (o static/menu_seed.sql + recrear volumen)
+- Token: en .env (fuera de git), formato docker compose env_file
 
 ## Pendientes
 
-- [ ] Crear bot real en @BotFather + configurar env vars
-- [ ] Probar conversación end-to-end en Telegram real
-- [ ] Definir menú real de la semana
-- [ ] Desplegar como servicio launchd (auto-arranque)
+- [ ] Prueba del ciclo real: pedido → corte viernes → reporte sábado
+- [ ] Migrar de quick tunnel (URL aleatoria) a dominio propio con túnel nombrado de Cloudflare (opcional)
+- [ ] Agregar personas al grupo y ajustar el menú real
 
 ## Bitácora de decisiones
 
 | Fecha | Decisión |
 |---|---|
-| 2026-09-07 | Bot de chat puro sobre Web App: la referencia Durger King es chat-native y el MVP no necesita web |
-| 2026-09-07 | SQLite sobre PostgreSQL: cero setup para un grupo pequeño; migrable |
-| 2026-09-07 | APScheduler en el mismo proceso del bot: una sola pieza operativa, sin cron externo |
+| 2026-09-07 | Bot chat-native primero; Web App solo cuando el menú '/' no apareció por cache del cliente |
+| 2026-09-07 | SQLite sobre PostgreSQL: cero setup para grupo pequeño; migrable |
+| 2026-09-07 | Docker + colima para desacoplar del ambiente local; LaunchAgents para auto-arranque |
+| 2026-09-07 | Túnel cloudflared quick con auto-re-registro del botón (los quick tunnels cambian URL) |
+| 2026-09-07 | API de la Web App autenticada con initData HMAC — nadie puede pedir por otro |
