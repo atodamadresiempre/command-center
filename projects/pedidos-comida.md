@@ -26,6 +26,8 @@ Referencia UX: Durger King Bot.
 
 ## Rutas y despliegue
 
+### Rutas locales
+
 | Qué | Dónde |
 |---|---|
 | Código | ~/pedidos-comida/ |
@@ -36,6 +38,12 @@ Referencia UX: Durger King Bot.
 
 Arranque total tras reinicio de Mac: login → colima → contenedor →
 túnel → botón actualizado. Todo automático.
+
+## Runtime
+
+- **Arranque:** automático en cascada — login → colima (LaunchAgent) → contenedor (restart policy) → túnel (LaunchAgent) → botón actualizado
+- **Detener:** `docker compose down` (y `launchctl unload` de los LaunchAgents si es total)
+- **Verificar salud:** `docker compose ps` + `docker compose logs -f pedidos-bot` + botón 🍽 abre la Web App
 
 ## Operación
 
